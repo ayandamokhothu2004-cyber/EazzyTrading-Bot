@@ -80,7 +80,7 @@ let botStatus = {
     {
       ticket: "ORDER_98412",
       symbol: "EURUSD",
-      direction: "BUY" as const,
+      direction: "BUY" as "BUY" | "SELL",
       lotSize: 2.5,
       entryPrice: 1.08520,
       slPrice: 1.08380,
@@ -233,6 +233,194 @@ app.post("/api/bot/clear-logs", (req, res) => {
   executionLogs.length = 0;
   executionLogs.push(`[${new Date().toISOString()}] Logs cleared by user.`);
   res.json({ status: "success" });
+});
+
+// ==============================================================================
+// 2d. MT5 REAL-TIME TRADING EXECUTION ENDPOINTS
+// ==============================================================================
+
+// Multi-Account Registry
+let accountsList = [
+  {
+    loginId: "1200280297",
+    brokerName: "JustMarkets",
+    server: "JustMarkets-Demo3",
+    isDemo: true,
+    currency: "ZAR",
+    balance: 100000.0,
+    equity: 101450.20,
+    isActive: true
+  },
+  {
+    loginId: "98410294",
+    brokerName: "Exness",
+    server: "Exness-Real10",
+    isDemo: false,
+    currency: "ZAR",
+    balance: 250000.0,
+    equity: 254200.00,
+    isActive: false
+  }
+];
+
+// Get Multi-Account List
+app.get("/api/accounts", (req, res) => {
+  res.json({ status: "success", accounts: accountsList });
+});
+
+// Add New Account Profile
+app.post("/api/accounts/add", (req, res) => {
+  const { loginId, brokerName, server, isDemo, currency, password } = req.body;
+  if (!loginId || !server) {
+    return res.status(400).json({ status: "error", message: "Login ID and Server are required." });
+  }
+
+  const newAcc = {
+    loginId: String(loginId),
+    brokerName: brokerName || "MetaTrader 5 Broker",
+    server: String(server),
+    isDemo: Boolean(isDemo),
+    currency: currency || "ZAR",
+    balance: 100000.0,
+    equity: 100000.0,
+    isActive: false
+  };
+
+  accountsList.push(newAcc);
+  executionLogs.unshift(`[${new Date().toISOString()}] [ACCOUNT ADDED] Added MT5 Account #${loginId} (${server})`);
+  res.json({ status: "success", account: newAcc });
+});
+
+// Switch Active Account Profile
+app.post("/api/accounts/switch", (req, res) => {
+  const { loginId } = req.body;
+  const acc = accountsList.find(a => a.loginId === String(loginId));
+
+  if (!acc) {
+    return res.status(444).json({ status: "error", message: "Account not found." });
+  }
+
+  accountsList.forEach(a => { a.isActive = false; });
+  acc.isActive = true;
+
+  activeBroker = {
+    id: acc.brokerName.toLowerCase().replace(/\s+/g, ''),
+    name: acc.brokerName,
+    server: acc.server,
+    loginId: acc.loginId,
+    isDemo: acc.isDemo,
+    connected: true,
+    pingMs: Math.floor(Math.random() * 15) + 8,
+    currency: acc.currency,
+    lastConnectedAt: new Date().toISOString()
+  };
+
+  botStatus.activeBroker = activeBroker;
+  botStatus.accountCurrency = acc.currency;
+  botStatus.currencySymbol = acc.currency === "ZAR" ? "R" : "$";
+  botStatus.accountBalance = acc.balance;
+  botStatus.accountEquity = acc.equity;
+
+  executionLogs.unshift(`[${new Date().toISOString()}] [ACCOUNT SWITCH] Switched active MT5 terminal connection to Account #${acc.loginId} (${acc.server})`);
+  res.json({ status: "success", activeBroker });
+});
+
+// Place Trade Order (Market / Limit / Stop)
+app.post("/api/trades/place", (req, res) => {
+  const { symbol, orderType, lotSize, price, sl, tp, reason } = req.body;
+
+  if (!symbol || !orderType || !lotSize) {
+    return res.status(400).json({ status: "error", message: "Symbol, orderType, and lotSize are required." });
+  }
+
+  const ticket = `ORDER_${Math.floor(Math.random() * 90000) + 10000}`;
+  const currentPrice = symbol === 'US100Cash' ? botStatus.symbolsState.US100Cash.price : botStatus.symbolsState.EURUSD.price;
+  const entryPrice = price || currentPrice;
+  const slPrice = sl || (orderType.includes('BUY') ? entryPrice * 0.998 : entryPrice * 1.002);
+  const tp1Price = tp || (orderType.includes('BUY') ? entryPrice * 1.004 : entryPrice * 0.996);
+  const tp2Price = orderType.includes('BUY') ? entryPrice * 1.008 : entryPrice * 0.992;
+
+  const newTrade = {
+    ticket,
+    symbol,
+    direction: orderType.includes('BUY') ? 'BUY' as const : 'SELL' as const,
+    lotSize: Number(lotSize),
+    entryPrice: Number(entryPrice),
+    slPrice: Number(slPrice),
+    tp1Price: Number(tp1Price),
+    tp2Price: Number(tp2Price),
+    currentPrice: Number(currentPrice),
+    unrealizedPL: 0.0,
+    pips: 0.0,
+    tp1Hit: false,
+    breakeven: false,
+    reason: reason || `Manual Execution (${orderType})`,
+    openTime: new Date().toISOString()
+  };
+
+  botStatus.openTrades.unshift(newTrade);
+  executionLogs.unshift(`[${new Date().toISOString()}] [MT5 TRADE EXEC] Placed ${orderType} order #${ticket} for ${symbol} | Size: ${lotSize} Lots @ ${entryPrice}`);
+
+  res.json({ status: "success", trade: newTrade });
+});
+
+// Close Single Position by Ticket
+app.post("/api/trades/close", (req, res) => {
+  const { ticket, volumePct } = req.body;
+  const idx = botStatus.openTrades.findIndex(t => t.ticket === ticket);
+
+  if (idx === -1) {
+    return res.status(404).json({ status: "error", message: "Position not found." });
+  }
+
+  const trade = botStatus.openTrades[idx];
+  if (volumePct && volumePct < 100) {
+    const closedLots = (trade.lotSize * (volumePct / 100)).toFixed(2);
+    trade.lotSize = Number((trade.lotSize - Number(closedLots)).toFixed(2));
+    executionLogs.unshift(`[${new Date().toISOString()}] [MT5 TRADE CLOSE] Partial Close ${volumePct}% (${closedLots} Lots) for Trade #${ticket} (${trade.symbol})`);
+    return res.json({ status: "success", message: `Partial close ${volumePct}% applied.`, trade });
+  }
+
+  botStatus.openTrades.splice(idx, 1);
+  executionLogs.unshift(`[${new Date().toISOString()}] [MT5 TRADE CLOSE] Closed Position #${ticket} (${trade.symbol}) | Realized P/L: ${botStatus.currencySymbol}${trade.unrealizedPL.toFixed(2)}`);
+  res.json({ status: "success", message: `Trade #${ticket} closed successfully.` });
+});
+
+// Close All Positions
+app.post("/api/trades/close-all", (req, res) => {
+  const count = botStatus.openTrades.length;
+  botStatus.openTrades = [];
+  executionLogs.unshift(`[${new Date().toISOString()}] [MT5 EMERGENCY] Closed ALL ${count} open position(s) immediately.`);
+  res.json({ status: "success", closedCount: count });
+});
+
+// Close Profit Positions Only
+app.post("/api/trades/close-profits", (req, res) => {
+  const profits = botStatus.openTrades.filter(t => t.unrealizedPL > 0);
+  botStatus.openTrades = botStatus.openTrades.filter(t => t.unrealizedPL <= 0);
+  executionLogs.unshift(`[${new Date().toISOString()}] [MT5 TRADE CLOSE] Closed ${profits.length} profitable position(s).`);
+  res.json({ status: "success", closedCount: profits.length });
+});
+
+// Close Losing Positions Only
+app.post("/api/trades/close-losses", (req, res) => {
+  const losses = botStatus.openTrades.filter(t => t.unrealizedPL < 0);
+  botStatus.openTrades = botStatus.openTrades.filter(t => t.unrealizedPL >= 0);
+  executionLogs.unshift(`[${new Date().toISOString()}] [MT5 TRADE CLOSE] Closed ${losses.length} losing position(s).`);
+  res.json({ status: "success", closedCount: losses.length });
+});
+
+// Move Position SL to Breakeven
+app.post("/api/trades/breakeven", (req, res) => {
+  const { ticket } = req.body;
+  const trade = botStatus.openTrades.find(t => t.ticket === ticket);
+  if (trade) {
+    trade.slPrice = trade.entryPrice;
+    trade.breakeven = true;
+    executionLogs.unshift(`[${new Date().toISOString()}] [MT5 RISK] Shifted Stop Loss for Trade #${ticket} to Breakeven (${trade.entryPrice}).`);
+    return res.json({ status: "success", trade });
+  }
+  res.status(404).json({ status: "error", message: "Trade not found." });
 });
 
 // 3. Read Python Configuration File

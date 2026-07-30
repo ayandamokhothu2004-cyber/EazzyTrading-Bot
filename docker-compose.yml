@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  trading-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mt5-institutional-bot
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - MT5_ACCOUNT=1200280297
+      - MT5_PASSWORD=${MT5_PASSWORD:-demo1234}
+      - MT5_SERVER=JustMarkets-Demo3
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID:-}
+    volumes:
+      - ./bot/logs:/app/bot/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/dashboard"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
