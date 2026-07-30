@@ -15,20 +15,20 @@ const BOT_DIR = path.join(process.cwd(), "bot");
 // Live log buffer for Python engine output
 const executionLogs: string[] = [
   `[${new Date().toISOString()}] [SYSTEM] Institutional Quant Trading Engine initialized (ZAR Account Base).`,
-  `[${new Date().toISOString()}] [MT5 BRIDGE] Terminal Link: ACTIVE | Account #9401294 (ZAR)`,
+  `[${new Date().toISOString()}] [MT5 BRIDGE] Terminal Link ACTIVE | Broker: JustMarkets | Account #1200280297 (JustMarkets-Demo3)`,
   `[${new Date().toISOString()}] [ENGINE] Configured Symbols: EURUSD, US100Cash | Active Model: MODEL_A`,
   `[${new Date().toISOString()}] [MARKET] Initialized candle data stream across H4, H1, M15, M5 timeframes.`
 ];
 
 // In-memory state for interactive web dashboard
 let activeBroker = {
-  id: "exness",
-  name: "Exness",
-  server: "Exness-Real10",
-  loginId: "98410294",
-  isDemo: false,
+  id: "justmarkets",
+  name: "JustMarkets",
+  server: "JustMarkets-Demo3",
+  loginId: "1200280297",
+  isDemo: true,
   connected: true,
-  pingMs: 14,
+  pingMs: 12,
   currency: "ZAR",
   lastConnectedAt: new Date().toISOString()
 };
@@ -181,12 +181,18 @@ app.post("/api/broker/disconnect", (req, res) => {
 app.get("/api/brokers", (req, res) => {
   res.json({
     brokers: [
+      { id: "justmarkets", name: "JustMarkets", defaultServer: "JustMarkets-Demo3", logoUrl: "https://www.google.com/s2/favicons?domain=justmarkets.com&sz=64" },
       { id: "xm", name: "XM Global", defaultServer: "XMGlobal-Real 3", logoUrl: "https://www.google.com/s2/favicons?domain=xm.com&sz=64" },
-      { id: "justmarkets", name: "JustMarkets", defaultServer: "JustMarkets-Live", logoUrl: "https://www.google.com/s2/favicons?domain=justmarkets.com&sz=64" },
       { id: "exness", name: "Exness", defaultServer: "Exness-Real10", logoUrl: "https://www.google.com/s2/favicons?domain=exness.com&sz=64" },
       { id: "icmarkets", name: "IC Markets", defaultServer: "ICMarkets-Live01", logoUrl: "https://www.google.com/s2/favicons?domain=icmarkets.com&sz=64" },
       { id: "pepperstone", name: "Pepperstone", defaultServer: "Pepperstone-Live01", logoUrl: "https://www.google.com/s2/favicons?domain=pepperstone.com&sz=64" },
       { id: "deriv", name: "Deriv (Financial/SVG)", defaultServer: "Deriv-Server", logoUrl: "https://www.google.com/s2/favicons?domain=deriv.com&sz=64" },
+      { id: "hfm", name: "HFM (HF Markets)", defaultServer: "HFMarketsSA-Live", logoUrl: "https://www.google.com/s2/favicons?domain=hfm.com&sz=64" },
+      { id: "fbs", name: "FBS Real / Demo", defaultServer: "FBS-Real-1", logoUrl: "https://www.google.com/s2/favicons?domain=fbs.com&sz=64" },
+      { id: "octafx", name: "OctaFX", defaultServer: "OctaFX-Real", logoUrl: "https://www.google.com/s2/favicons?domain=octafx.com&sz=64" },
+      { id: "vantage", name: "Vantage Markets", defaultServer: "VantageFX-Live", logoUrl: "https://www.google.com/s2/favicons?domain=vantagemarkets.com&sz=64" },
+      { id: "tickmill", name: "Tickmill", defaultServer: "Tickmill-Live", logoUrl: "https://www.google.com/s2/favicons?domain=tickmill.com&sz=64" },
+      { id: "avatrade", name: "AvaTrade", defaultServer: "Ava-Real1", logoUrl: "https://www.google.com/s2/favicons?domain=avatrade.com&sz=64" },
       { id: "custom", name: "Custom MT5 Server", defaultServer: "Custom-MT5-Live", logoUrl: "" }
     ]
   });

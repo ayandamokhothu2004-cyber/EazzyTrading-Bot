@@ -18,10 +18,10 @@ interface PresetBroker {
 
 const PRESET_BROKERS: PresetBroker[] = [
   {
-    id: 'exness',
-    name: 'Exness',
-    defaultServer: 'Exness-Real10',
-    servers: ['Exness-Real10', 'Exness-Real11', 'Exness-Real1', 'Exness-Trial1', 'Exness-Trial2']
+    id: 'justmarkets',
+    name: 'JustMarkets',
+    defaultServer: 'JustMarkets-Demo3',
+    servers: ['JustMarkets-Demo3', 'JustMarkets-Live', 'JustMarkets-Live2', 'JustMarkets-Demo', 'JustMarkets-Demo2']
   },
   {
     id: 'xm',
@@ -30,10 +30,10 @@ const PRESET_BROKERS: PresetBroker[] = [
     servers: ['XMGlobal-Real 3', 'XMGlobal-Real 2', 'XMGlobal-Real 1', 'XMGlobal-Demo 1']
   },
   {
-    id: 'justmarkets',
-    name: 'JustMarkets',
-    defaultServer: 'JustMarkets-Live',
-    servers: ['JustMarkets-Live', 'JustMarkets-Live2', 'JustMarkets-Demo']
+    id: 'exness',
+    name: 'Exness',
+    defaultServer: 'Exness-Real10',
+    servers: ['Exness-Real10', 'Exness-Real11', 'Exness-Real1', 'Exness-Trial1', 'Exness-Trial2']
   },
   {
     id: 'icmarkets',
@@ -54,6 +54,42 @@ const PRESET_BROKERS: PresetBroker[] = [
     servers: ['Deriv-Server', 'Deriv-Server-02', 'Deriv-Demo']
   },
   {
+    id: 'hfm',
+    name: 'HFM (HF Markets)',
+    defaultServer: 'HFMarketsSA-Live',
+    servers: ['HFMarketsSA-Live', 'HFMarkets-Demo']
+  },
+  {
+    id: 'fbs',
+    name: 'FBS Real / Demo',
+    defaultServer: 'FBS-Real-1',
+    servers: ['FBS-Real-1', 'FBS-[#01] Demo']
+  },
+  {
+    id: 'octafx',
+    name: 'OctaFX',
+    defaultServer: 'OctaFX-Real',
+    servers: ['OctaFX-Real', 'OctaFX-Demo']
+  },
+  {
+    id: 'vantage',
+    name: 'Vantage Markets',
+    defaultServer: 'VantageFX-Live',
+    servers: ['VantageFX-Live', 'VantageFX-Demo']
+  },
+  {
+    id: 'tickmill',
+    name: 'Tickmill',
+    defaultServer: 'Tickmill-Live',
+    servers: ['Tickmill-Live', 'Tickmill-Demo']
+  },
+  {
+    id: 'avatrade',
+    name: 'AvaTrade',
+    defaultServer: 'Ava-Real1',
+    servers: ['Ava-Real1', 'Ava-Demo']
+  },
+  {
     id: 'custom',
     name: 'Custom MT5 Broker',
     defaultServer: 'Custom-MT5-Live',
@@ -62,12 +98,12 @@ const PRESET_BROKERS: PresetBroker[] = [
 ];
 
 export const BrokerModal: React.FC<BrokerModalProps> = ({ isOpen, onClose, activeBroker, onConnected }) => {
-  const [selectedBrokerId, setSelectedBrokerId] = useState<string>(activeBroker?.id || 'exness');
-  const [server, setServer] = useState<string>(activeBroker?.server || 'Exness-Real10');
+  const [selectedBrokerId, setSelectedBrokerId] = useState<string>(activeBroker?.id || 'justmarkets');
+  const [server, setServer] = useState<string>(activeBroker?.server || 'JustMarkets-Demo3');
   const [customServer, setCustomServer] = useState<string>('');
-  const [loginId, setLoginId] = useState<string>(activeBroker?.loginId || '9401294');
+  const [loginId, setLoginId] = useState<string>(activeBroker?.loginId || '1200280297');
   const [password, setPassword] = useState<string>('••••••••••••');
-  const [isDemo, setIsDemo] = useState<boolean>(activeBroker?.isDemo || false);
+  const [isDemo, setIsDemo] = useState<boolean>(activeBroker?.isDemo ?? true);
   const [currency, setCurrency] = useState<string>(activeBroker?.currency || 'ZAR');
   const [loading, setLoading] = useState<boolean>(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
