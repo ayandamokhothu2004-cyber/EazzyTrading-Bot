@@ -1,0 +1,6 @@
+{
+  "name": "Institutional Algo Trading Bot",
+  "description": "Rule-based quantitative MT5 algorithmic trading bot and interactive backtesting studio for EURUSD and NAS100.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
