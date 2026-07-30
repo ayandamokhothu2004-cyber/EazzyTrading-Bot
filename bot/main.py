@@ -83,15 +83,21 @@ class TradingBotEngine:
 
     def run_cycle_for_symbol(self, symbol: str):
         """Executes a single evaluation cycle for a symbol."""
+        logger.info(f"=== Processing Symbol: {symbol} ===")
+
         # 1. Check current spread
         current_spread = self.market_data.get_current_spread(symbol)
         max_allowed_spread = config.MAX_SPREAD_PIPS.get(symbol, 2.0)
+        logger.info(f"[{symbol}] Current spread: {current_spread} pips/pts (Max Allowed: {max_allowed_spread})")
 
         # 2. Get current prices and update existing positions
         ask, bid = self.market_data.get_current_price(symbol)
+        logger.info(f"[{symbol}] Current price - Ask: {ask}, Bid: {bid}")
+
         closed_reports = self.trade_manager.update_positions(symbol, ask, bid)
 
         for report in closed_reports:
+            logger.info(f"[{symbol}] Position closed: {report}")
             # Update risk tracker and record trade in journal
             self.risk_manager.record_trade_result(report["pl"])
             self.journal.log_trade(
@@ -109,8 +115,11 @@ class TradingBotEngine:
             )
 
         # 3. Check Session Filter
-        if not self.is_in_trading_session():
+        in_session = self.is_in_trading_session()
+        if not in_session:
+            logger.info(f"[{symbol}] Session Filter: FAILED (outside active trading session hours). Order Skipped.")
             return
+        logger.info(f"[{symbol}] Session Filter: PASSED (active trading session)")
 
         # 4. Check Risk Permission
         account_balance = 100000.0  # Placeholder or retrieved from MT5
@@ -119,7 +128,9 @@ class TradingBotEngine:
         )
 
         if not is_allowed:
+            logger.info(f"[{symbol}] Risk Manager Permission: REJECTED ({reason}). Order Skipped.")
             return
+        logger.info(f"[{symbol}] Risk Manager Permission: PASSED ({reason})")
 
         # 5. Fetch Multi-timeframe Bar Data
         candles_h4 = self.market_data.get_candles(symbol, "H4", 100)
@@ -127,11 +138,19 @@ class TradingBotEngine:
         candles_m15 = self.market_data.get_candles(symbol, "M15", 100)
 
         if not candles_h4 or not candles_h1 or not candles_m15:
+            logger.info(
+                f"[{symbol}] Market Data: INSUFFICIENT CANDLE DATA "
+                f"(H4 count: {len(candles_h4) if candles_h4 else 0}, "
+                f"H1 count: {len(candles_h1) if candles_h1 else 0}, "
+                f"M15 count: {len(candles_m15) if candles_m15 else 0}). Order Skipped."
+            )
             return
 
         # STEP 1: Determine Higher Timeframe Trend (H4 / H1)
         trend = self.trend_analyzer.evaluate_trend(candles_h4, candles_h1)
+        logger.info(f"[{symbol}] Trend Analysis Result: {trend}")
         if trend == "NO_TREND":
+            logger.info(f"[{symbol}] Order Skipped: No clear higher timeframe trend (H1/H4).")
             return
 
         # STEP 2: Identify Liquidity Pools & Sweeps
@@ -140,12 +159,24 @@ class TradingBotEngine:
         eqh, eql = self.liquidity_analyzer.find_equal_highs_lows(swing_highs, swing_lows)
 
         sweep = self.liquidity_analyzer.detect_liquidity_sweep(candles_m15, pdh, pdl, eqh, eql, trend)
+        logger.info(
+            f"[{symbol}] Liquidity Sweep Detection Result: "
+            f"is_swept={sweep.get('is_swept')}, direction={sweep.get('direction')}, "
+            f"sweep_level={sweep.get('sweep_level')}, level_price={sweep.get('level_price')}"
+        )
         if not sweep["is_swept"]:
+            logger.info(f"[{symbol}] Order Skipped: No liquidity sweep detected on M15.")
             return
 
         # STEP 3: Wait for Confirmation (BOS / CHoCH)
         confirmation = self.structure_analyzer.detect_confirmation(candles_m15, swing_highs, swing_lows, sweep["direction"])
+        logger.info(
+            f"[{symbol}] Structure Confirmation Result: "
+            f"has_confirmation={confirmation.get('has_confirmation')}, type={confirmation.get('type')}, "
+            f"break_price={confirmation.get('break_price')}"
+        )
         if not confirmation["has_confirmation"]:
+            logger.info(f"[{symbol}] Order Skipped: No BOS/CHoCH structure confirmation on M15.")
             return
 
         # STEP 4: Pullback Evaluation & Entry Model
@@ -158,8 +189,14 @@ class TradingBotEngine:
             ob_required=config.ORDER_BLOCK_ENABLED,
             fvg_required=config.FVG_ENABLED
         )
+        logger.info(
+            f"[{symbol}] Entry Model ({config.ACTIVE_ENTRY_MODEL}) Result: "
+            f"valid={signal.get('valid')}, direction={signal.get('direction')}, "
+            f"entry_price={signal.get('entry_price')}, sl_price={signal.get('sl_price')}, reason={signal.get('reason')}"
+        )
 
         if not signal["valid"]:
+            logger.info(f"[{symbol}] Order Skipped: Entry model signal not valid ({signal.get('reason')}).")
             return
 
         # STEP 5: Risk Calculation & Execution
@@ -169,9 +206,11 @@ class TradingBotEngine:
             entry_price=signal["entry_price"],
             sl_price=signal["sl_price"]
         )
+        logger.info(f"[{symbol}] Calculated Lot Size: {lot_size} (Entry: {signal['entry_price']}, SL: {signal['sl_price']}, Risk: {config.RISK_PER_TRADE_PCT}%)")
 
         # Place Order
-        self.trade_manager.execute_order(
+        logger.info(f"[{symbol}] Sending Order: Direction={signal['direction']}, Lot={lot_size}, Entry={signal['entry_price']}, SL={signal['sl_price']}, Reason={signal['reason']}")
+        order_result = self.trade_manager.execute_order(
             symbol=symbol,
             order_type=signal["direction"],
             lot_size=lot_size,
@@ -180,6 +219,7 @@ class TradingBotEngine:
             tp2_liquidity_price=None,
             reason=signal["reason"]
         )
+        logger.info(f"[{symbol}] Order Execution Completed. Result: {order_result}")
 
     def start(self):
         """Starts the main trading execution loop."""
