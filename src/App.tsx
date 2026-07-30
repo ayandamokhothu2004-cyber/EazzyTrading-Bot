@@ -5,11 +5,13 @@ import { BacktestStudio } from './components/BacktestStudio';
 import { ConfigEditor } from './components/ConfigEditor';
 import { CodeInspector } from './components/CodeInspector';
 import { TradeJournalView } from './components/TradeJournalView';
+import { BrokerModal } from './components/BrokerModal';
 import { BotDashboardData } from './types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [dashboardData, setDashboardData] = useState<BotDashboardData | null>(null);
+  const [isBrokerModalOpen, setIsBrokerModalOpen] = useState<boolean>(false);
 
   const fetchDashboard = async () => {
     try {
@@ -50,6 +52,7 @@ export default function App() {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onToggleBot={handleToggleBot}
+        onOpenBrokerModal={() => setIsBrokerModalOpen(true)}
       />
 
       {/* Main Body Content Container */}
@@ -60,6 +63,14 @@ export default function App() {
         {activeTab === 'config' && <ConfigEditor />}
         {activeTab === 'inspector' && <CodeInspector />}
       </main>
+
+      {/* Broker Connection Modal */}
+      <BrokerModal
+        isOpen={isBrokerModalOpen}
+        onClose={() => setIsBrokerModalOpen(false)}
+        activeBroker={dashboardData?.activeBroker}
+        onConnected={fetchDashboard}
+      />
 
     </div>
   );

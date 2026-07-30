@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Play, Square, ShieldCheck, Activity, Terminal, Layers, BookOpen, Settings } from 'lucide-react';
+import { Bot, Play, Square, ShieldCheck, Activity, Terminal, Layers, BookOpen, Settings, Server } from 'lucide-react';
 import { BotDashboardData } from '../types';
 
 interface NavbarProps {
@@ -7,10 +7,15 @@ interface NavbarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   onToggleBot: () => void;
+  onOpenBrokerModal?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, onToggleBot }) => {
+export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, onToggleBot, onOpenBrokerModal }) => {
   const isRunning = data?.isRunning ?? false;
+  const activeBroker = data?.activeBroker;
+  const brokerName = activeBroker?.name || 'Exness';
+  const brokerServer = activeBroker?.server || 'Exness-Real10';
+  const isDemo = activeBroker?.isDemo;
 
   return (
     <header className="bg-[#0A0A0B] border-b border-[#1F2937] text-slate-300 sticky top-0 z-50">
@@ -31,7 +36,7 @@ export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, o
                   v2.1.0-STABLE
                 </span>
                 <span className="px-2 py-0.5 text-[10px] font-mono tracking-wider uppercase bg-green-900/30 text-green-500 border border-green-500/30 rounded">
-                  MT5
+                  MT5 LIVE
                 </span>
               </div>
               <p className="text-[11px] font-mono text-slate-500 hidden sm:block">
@@ -68,22 +73,24 @@ export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, o
             })}
           </nav>
 
-          {/* Controls & Bot Execution Switch */}
-          <div className="flex items-center space-x-4">
-            <div className="hidden lg:flex items-center space-x-5 text-[10px] font-mono tracking-widest uppercase">
-              <div className="flex flex-col items-end">
-                <span className="text-slate-500">Broker</span>
-                <span className="text-white font-semibold">METATRADER 5</span>
+          {/* Controls & Broker Switch */}
+          <div className="flex items-center space-x-3">
+            {/* Broker Account Badge / Selector */}
+            <button
+              onClick={onOpenBrokerModal}
+              className="flex items-center space-x-2 px-3 py-1.5 bg-[#111113] hover:bg-[#1A1A1E] border border-green-500/40 text-slate-200 text-xs font-mono rounded transition-colors group"
+              title="Click to change MT5 Broker Login (XM, JustMarkets, Exness, Deriv, IC Markets)"
+            >
+              <Server className="w-3.5 h-3.5 text-green-400 group-hover:animate-pulse" />
+              <div className="flex flex-col items-start leading-tight">
+                <span className="text-[9px] text-slate-500 uppercase tracking-wider flex items-center">
+                  BROKER: <strong className="text-white ml-1">{brokerName}</strong>
+                </span>
+                <span className="text-[10px] text-green-400 font-bold truncate max-w-[110px]">
+                  {brokerServer} {isDemo ? '(DEMO)' : ''}
+                </span>
               </div>
-              <div className="flex flex-col items-end">
-                <span className="text-slate-500">Session</span>
-                <span className="text-orange-500 font-semibold">{data?.activeSession || 'London Open'}</span>
-              </div>
-              <div className="flex flex-col items-end">
-                <span className="text-slate-500">Latency</span>
-                <span className="text-green-500 font-semibold">12ms</span>
-              </div>
-            </div>
+            </button>
 
             <button
               onClick={onToggleBot}

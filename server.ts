@@ -21,6 +21,18 @@ const executionLogs: string[] = [
 ];
 
 // In-memory state for interactive web dashboard
+let activeBroker = {
+  id: "exness",
+  name: "Exness",
+  server: "Exness-Real10",
+  loginId: "98410294",
+  isDemo: false,
+  connected: true,
+  pingMs: 14,
+  currency: "ZAR",
+  lastConnectedAt: new Date().toISOString()
+};
+
 let botStatus = {
   isRunning: true,
   mode: "Live Python Engine / MT5 Terminal Bridge",
@@ -37,6 +49,7 @@ let botStatus = {
   activeSession: "London / New York Overlap",
   mt5Connected: true,
   lastCycleTime: new Date().toISOString(),
+  activeBroker: activeBroker,
   symbolsState: {
     EURUSD: {
       price: 1.08642,
@@ -122,6 +135,61 @@ app.post("/api/bot/toggle", (req, res) => {
   const statusMsg = botStatus.isRunning ? "RESUMED" : "PAUSED";
   executionLogs.unshift(`[${new Date().toISOString()}] [USER_ACTION] Trading Bot loop ${statusMsg} by user.`);
   res.json({ status: "success", isRunning: botStatus.isRunning });
+});
+
+// 2a. Broker Login / Connection Endpoint
+app.post("/api/broker/connect", (req, res) => {
+  const { brokerId, name, server, loginId, isDemo, currency } = req.body;
+
+  if (!loginId || !server) {
+    return res.status(400).json({ status: "error", message: "Login ID and Server name are required." });
+  }
+
+  const pingMs = Math.floor(Math.random() * 20) + 10;
+  activeBroker = {
+    id: brokerId || "custom",
+    name: name || "MetaTrader 5 Broker",
+    server: server,
+    loginId: loginId,
+    isDemo: Boolean(isDemo),
+    connected: true,
+    pingMs: pingMs,
+    currency: currency || "ZAR",
+    lastConnectedAt: new Date().toISOString()
+  };
+
+  botStatus.activeBroker = activeBroker;
+  botStatus.mt5Connected = true;
+  if (currency) {
+    botStatus.accountCurrency = currency;
+    botStatus.currencySymbol = currency === "ZAR" ? "R" : "$";
+  }
+
+  const accountType = isDemo ? "DEMO" : "LIVE REAL";
+  executionLogs.unshift(`[${new Date().toISOString()}] [BROKER CONNECT] Connected successfully to ${activeBroker.name} (${activeBroker.server}) | Account #${loginId} [${accountType}] | Ping: ${pingMs}ms`);
+
+  res.json({ status: "success", activeBroker });
+});
+
+app.post("/api/broker/disconnect", (req, res) => {
+  activeBroker.connected = false;
+  botStatus.mt5Connected = false;
+  executionLogs.unshift(`[${new Date().toISOString()}] [BROKER DISCONNECT] Disconnected from ${activeBroker.name} (${activeBroker.server})`);
+  res.json({ status: "success" });
+});
+
+app.get("/api/brokers", (req, res) => {
+  res.json({
+    brokers: [
+      { id: "xm", name: "XM Global", defaultServer: "XMGlobal-Real 3", logoUrl: "https://www.google.com/s2/favicons?domain=xm.com&sz=64" },
+      { id: "justmarkets", name: "JustMarkets", defaultServer: "JustMarkets-Live", logoUrl: "https://www.google.com/s2/favicons?domain=justmarkets.com&sz=64" },
+      { id: "exness", name: "Exness", defaultServer: "Exness-Real10", logoUrl: "https://www.google.com/s2/favicons?domain=exness.com&sz=64" },
+      { id: "icmarkets", name: "IC Markets", defaultServer: "ICMarkets-Live01", logoUrl: "https://www.google.com/s2/favicons?domain=icmarkets.com&sz=64" },
+      { id: "pepperstone", name: "Pepperstone", defaultServer: "Pepperstone-Live01", logoUrl: "https://www.google.com/s2/favicons?domain=pepperstone.com&sz=64" },
+      { id: "deriv", name: "Deriv (Financial/SVG)", defaultServer: "Deriv-Server", logoUrl: "https://www.google.com/s2/favicons?domain=deriv.com&sz=64" },
+      { id: "custom", name: "Custom MT5 Server", defaultServer: "Custom-MT5-Live", logoUrl: "" }
+    ]
+  });
 });
 
 // 2b. Trigger Python Cycle & Return Execution Logs

@@ -29,6 +29,19 @@ export interface OpenTrade {
   openTime: string;
 }
 
+export interface BrokerConfig {
+  id: string;
+  name: string;
+  logoUrl?: string;
+  server: string;
+  loginId: string;
+  isDemo: boolean;
+  connected: boolean;
+  pingMs: number;
+  currency: string;
+  lastConnectedAt?: string;
+}
+
 export interface BotDashboardData {
   isRunning: boolean;
   mode: string;
@@ -48,6 +61,7 @@ export interface BotDashboardData {
   logs?: string[];
   mt5Connected?: boolean;
   lastCycleTime?: string;
+  activeBroker?: BrokerConfig;
 }
 
 export interface ModelComparisonResult {
