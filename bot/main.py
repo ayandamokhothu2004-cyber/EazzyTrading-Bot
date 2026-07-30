@@ -251,5 +251,18 @@ class TradingBotEngine:
 
 
 if __name__ == "__main__":
+    import sys
     bot = TradingBotEngine()
-    bot.start()
+    if "--once" in sys.argv:
+        logger.info("Executing SINGLE evaluation run...")
+        logger.info("Calling MarketData.initialize()...")
+        result = bot.market_data.initialize()
+        logger.info(f"MarketData.initialize() returned: {result}")
+        if result:
+            for symbol in bot.symbols:
+                try:
+                    bot.run_cycle_for_symbol(symbol)
+                except Exception as e:
+                    logger.error(f"Error evaluating symbol {symbol}: {e}", exc_info=True)
+    else:
+        bot.start()

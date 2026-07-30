@@ -51,9 +51,9 @@ export const TradeJournalView: React.FC = () => {
             onChange={(e) => setSymbolFilter(e.target.value)}
             className="bg-black text-white text-xs font-mono font-semibold px-3 py-2 border border-[#1F2937] outline-none focus:border-green-500"
           >
-            <option value="ALL">All Pairs (EURUSD & NAS100)</option>
+            <option value="ALL">All Pairs (EURUSD & US100Cash)</option>
             <option value="EURUSD">EURUSD Only</option>
-            <option value="NAS100">NAS100 Only</option>
+            <option value="US100Cash">US100Cash Only</option>
           </select>
         </div>
       </div>
@@ -71,7 +71,7 @@ export const TradeJournalView: React.FC = () => {
         <div className="bg-[#111113] border border-[#1F2937] p-4">
           <span className="text-slate-500 text-[10px] uppercase">NET REALIZED P/L</span>
           <div className={`text-2xl font-bold mt-1 ${totalPL >= 0 ? 'text-green-500' : 'text-red-400'}`}>
-            {totalPL >= 0 ? '+' : ''}${totalPL.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {totalPL >= 0 ? '+' : ''}R {totalPL.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
         </div>
       </div>
@@ -116,7 +116,7 @@ export const TradeJournalView: React.FC = () => {
                   <td className="py-3 px-3">{t.lot_size}</td>
                   <td className="py-3 px-3">{t.risk_pct}%</td>
                   <td className={`py-3 px-3 font-bold ${t.profit_loss >= 0 ? 'text-green-500' : 'text-red-400'}`}>
-                    {t.profit_loss >= 0 ? '+' : ''}${t.profit_loss.toFixed(2)}
+                    {t.profit_loss >= 0 ? '+' : ''}R {t.profit_loss.toFixed(2)}
                   </td>
                   <td className={`py-3 px-3 font-bold ${t.rr_achieved > 0 ? 'text-green-500' : 'text-red-400'}`}>
                     {t.rr_achieved > 0 ? '+' : ''}{t.rr_achieved}R

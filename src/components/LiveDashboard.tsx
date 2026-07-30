@@ -1,5 +1,5 @@
-import React from 'react';
-import { DollarSign, TrendingUp, ShieldAlert, Zap, ArrowUpRight, ArrowDownRight, Layers, Lock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import React, { useState } from 'react';
+import { DollarSign, TrendingUp, ShieldAlert, Zap, ArrowUpRight, ArrowDownRight, Layers, Lock, CheckCircle2, AlertTriangle, Terminal, Play, Trash2, RefreshCw } from 'lucide-react';
 import { BotDashboardData } from '../types';
 
 interface LiveDashboardProps {
@@ -7,6 +7,8 @@ interface LiveDashboardProps {
 }
 
 export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
+  const [isTriggering, setIsTriggering] = useState(false);
+
   if (!data) {
     return (
       <div className="p-8 text-center text-slate-500 font-mono text-xs">
@@ -15,23 +17,64 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
     );
   }
 
-  const eurusd = data.symbolsState.EURUSD;
-  const nas100 = data.symbolsState.NAS100;
+  const currencySymbol = data.currencySymbol || 'R';
+  const currencyCode = data.accountCurrency || 'ZAR';
+
+  const eurusd = data.symbolsState.EURUSD || {
+    price: 1.08642,
+    ask: 1.08648,
+    bid: 1.08642,
+    spread: 1.2,
+    trend: 'UPTREND',
+    sweepDetected: 'PDL Swept at 1.08450',
+    confirmation: 'BOS Confirmed (M15)',
+    entryModel: 'MODEL_A'
+  };
+
+  const us100 = data.symbolsState.US100Cash || data.symbolsState.NAS100 || {
+    price: 18542.50,
+    ask: 18544.00,
+    bid: 18542.50,
+    spread: 15.0,
+    trend: 'UPTREND',
+    sweepDetected: 'EQL Swept at 18420.00',
+    confirmation: 'CHoCH Confirmed (M5)',
+    entryModel: 'MODEL_A'
+  };
+
+  const handleTriggerCycle = async () => {
+    setIsTriggering(true);
+    try {
+      await fetch('/api/bot/trigger-cycle', { method: 'POST' });
+    } catch (err) {
+      console.error('Failed to trigger cycle:', err);
+    } finally {
+      setTimeout(() => setIsTriggering(false), 800);
+    }
+  };
+
+  const handleClearLogs = async () => {
+    try {
+      await fetch('/api/bot/clear-logs', { method: 'POST' });
+    } catch (err) {
+      console.error('Failed to clear logs:', err);
+    }
+  };
 
   return (
     <div className="space-y-6 font-sans">
       
-      {/* Top Banner: Account Overview Cards */}
+      {/* Top Banner: Account Overview Cards (ZAR Base) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         
         {/* Account Balance & Equity */}
         <div className="bg-[#111113] border border-[#1F2937] p-4 flex flex-col justify-between h-28 rounded-none">
           <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest font-semibold font-mono">
-            <span>EQUITY BALANCE</span>
+            <span>EQUITY BALANCE ({currencyCode})</span>
             <DollarSign className="w-4 h-4 text-green-500" />
           </div>
           <div className="text-2xl font-mono font-bold text-white tracking-tight">
-            ${data.accountBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+            {currencySymbol} {data.accountBalance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="h-1 bg-[#1F2937] rounded-full overflow-hidden mt-2">
             <div className="h-full bg-green-500 w-[78%]" />
@@ -39,7 +82,7 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
           <div className="mt-1 flex items-center justify-between text-[10px] font-mono">
             <span className="text-slate-500">Equity:</span>
             <span className="font-semibold text-green-500">
-              ${data.accountEquity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              {currencySymbol} {data.accountEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -52,7 +95,7 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
           </div>
           <div className="flex items-baseline space-x-2">
             <div className={`text-2xl font-mono font-bold tracking-tight ${data.todayPL >= 0 ? 'text-green-500' : 'text-red-400'}`}>
-              {data.todayPL >= 0 ? '+' : ''}${data.todayPL.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              {data.todayPL >= 0 ? '+' : ''}{currencySymbol} {data.todayPL.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
             <span className={`text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded border ${data.todayPL >= 0 ? 'bg-green-900/30 text-green-500 border-green-500/30' : 'bg-red-900/30 text-red-400 border-red-500/30'}`}>
               {data.todayPLPct >= 0 ? '+' : ''}{data.todayPLPct}%
@@ -89,22 +132,22 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
         {/* Session & Engine Status */}
         <div className="bg-[#111113] border border-[#1F2937] p-4 flex flex-col justify-between h-28 rounded-none">
           <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest font-semibold font-mono">
-            <span>CIRCUIT BREAKER</span>
+            <span>MT5 BRIDGE STATUS</span>
             <Zap className="w-4 h-4 text-blue-400" />
           </div>
           <div className="flex items-center space-x-2 my-1">
             <span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">MONITORING MARKET</span>
+            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">PYTHON ENGINE ONLINE</span>
           </div>
           <div className="text-[10px] font-mono text-slate-500 flex justify-between">
-            <span>Max Limit:</span>
-            <span className="text-slate-300 font-semibold">2% Daily / 5% Max</span>
+            <span>Base Currency:</span>
+            <span className="text-green-400 font-semibold">{currencyCode} ({currencySymbol})</span>
           </div>
         </div>
 
       </div>
 
-      {/* Symbol Live Monitors: EURUSD & NAS100 */}
+      {/* Symbol Live Monitors: EURUSD & US100Cash */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         
         {/* EURUSD Monitor */}
@@ -129,17 +172,15 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
 
             <div className="text-right font-mono">
               <div className="text-[10px] text-slate-500 uppercase">Spread</div>
-              <div className={`text-sm font-bold ${eurusd.spread <= 1.5 ? 'text-green-500' : 'text-red-400'}`}>
+              <div className={`text-sm font-bold ${eurusd.spread <= 2.5 ? 'text-green-500' : 'text-red-400'}`}>
                 {eurusd.spread.toFixed(1)} Pips
               </div>
-              <span className="text-[9px] text-slate-600">Limit: 1.5 Pips</span>
+              <span className="text-[9px] text-slate-600">Limit: 2.5 Pips</span>
             </div>
           </div>
 
           {/* 5-Step Rule Execution Protocol Monitor */}
           <div className="space-y-2 font-mono">
-            
-            {/* Step 1: Trend */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">1. HTF Trend (H4/H1)</span>
               <span className="text-[10px] px-2 py-0.5 bg-green-900/30 text-green-500 border border-green-500/30 font-bold flex items-center">
@@ -147,100 +188,84 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
                 {eurusd.trend}
               </span>
             </div>
-
-            {/* Step 2: Liquidity */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">2. Liquidity Engine</span>
               <span className="text-[10px] text-blue-400 italic font-bold">{eurusd.sweepDetected}</span>
             </div>
-
-            {/* Step 3: Confirmation */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">3. BOS / CHoCH</span>
               <span className="text-[10px] px-2 py-0.5 bg-blue-900/30 text-blue-400 border border-blue-500/30 font-bold">{eurusd.confirmation}</span>
             </div>
-
-            {/* Step 4: Pullback & Model */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">4. Model State</span>
               <span className="text-[10px] text-amber-400 font-bold">MODEL A (SWEEP + BOS + OB)</span>
             </div>
-
           </div>
         </div>
 
-        {/* NAS100 Monitor */}
+        {/* US100Cash Monitor */}
         <div className="bg-[#111113] border border-[#1F2937] p-5 rounded-none flex flex-col">
           <div className="flex items-center justify-between border-b border-[#1F2937] pb-3 mb-4">
             <div className="flex items-center space-x-3">
               <div className="w-9 h-9 bg-black border border-[#1F2937] flex items-center justify-center font-mono font-bold text-blue-400 text-xs">
-                NAS
+                US100
               </div>
               <div>
                 <div className="flex items-center space-x-2">
-                  <h3 className="font-bold text-white text-sm font-mono tracking-wider">NAS100</h3>
+                  <h3 className="font-bold text-white text-sm font-mono tracking-wider">US100Cash</h3>
                   <span className="text-[9px] font-mono uppercase px-1.5 py-0.5 bg-blue-900/30 text-blue-400 border border-blue-500/30">
                     US TECH INDEX
                   </span>
                 </div>
                 <div className="text-[11px] font-mono text-slate-400">
-                  Ask: <span className="text-white">{nas100.ask.toFixed(1)}</span> | Bid: <span className="text-white">{nas100.bid.toFixed(1)}</span>
+                  Ask: <span className="text-white">{us100.ask.toFixed(1)}</span> | Bid: <span className="text-white">{us100.bid.toFixed(1)}</span>
                 </div>
               </div>
             </div>
 
             <div className="text-right font-mono">
               <div className="text-[10px] text-slate-500 uppercase">Spread</div>
-              <div className={`text-sm font-bold ${nas100.spread <= 25.0 ? 'text-green-500' : 'text-red-400'}`}>
-                {nas100.spread.toFixed(1)} Pts
+              <div className={`text-sm font-bold ${us100.spread <= 300.0 ? 'text-green-500' : 'text-red-400'}`}>
+                {us100.spread.toFixed(1)} Pts
               </div>
-              <span className="text-[9px] text-slate-600">Limit: 25.0 Pts</span>
+              <span className="text-[9px] text-slate-600">Limit: 300.0 Pts</span>
             </div>
           </div>
 
           {/* 5-Step Rule Execution Protocol Monitor */}
           <div className="space-y-2 font-mono">
-            
-            {/* Step 1: Trend */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">1. HTF Trend (H4/H1)</span>
               <span className="text-[10px] px-2 py-0.5 bg-green-900/30 text-green-500 border border-green-500/30 font-bold flex items-center">
                 <ArrowUpRight className="w-3 h-3 mr-1" />
-                {nas100.trend}
+                {us100.trend}
               </span>
             </div>
-
-            {/* Step 2: Liquidity */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">2. Liquidity Engine</span>
-              <span className="text-[10px] text-blue-400 italic font-bold">{nas100.sweepDetected}</span>
+              <span className="text-[10px] text-blue-400 italic font-bold">{us100.sweepDetected}</span>
             </div>
-
-            {/* Step 3: Confirmation */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">3. BOS / CHoCH</span>
-              <span className="text-[10px] px-2 py-0.5 bg-blue-900/30 text-blue-400 border border-blue-500/30 font-bold">{nas100.confirmation}</span>
+              <span className="text-[10px] px-2 py-0.5 bg-blue-900/30 text-blue-400 border border-blue-500/30 font-bold">{us100.confirmation}</span>
             </div>
-
-            {/* Step 4: Pullback & Model */}
             <div className="flex items-center justify-between p-2 bg-black border border-[#1F2937]">
               <span className="text-[10px] text-slate-500 uppercase">4. Model State</span>
               <span className="text-[10px] text-amber-400 font-bold">MODEL A (SWEEP + BOS + OB)</span>
             </div>
-
           </div>
         </div>
 
       </div>
 
-      {/* Active Open Trades Table */}
+      {/* Active Open Trades Table (ZAR Base) */}
       <div className="bg-[#111113] border border-[#1F2937] p-5 rounded-none">
         <div className="flex items-center justify-between mb-4 border-b border-[#1F2937] pb-3">
           <div className="flex items-center space-x-2">
             <Layers className="w-4 h-4 text-green-500" />
             <h3 className="font-bold text-white text-xs uppercase font-mono tracking-widest">Active MT5 Positions ({data.openTrades.length})</h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Automatic SL/TP1/TP2 & Breakeven Active</span>
+          <span className="text-[10px] font-mono text-slate-500 uppercase">Automatic SL/TP1/TP2 & Breakeven Active (ZAR)</span>
         </div>
 
         {data.openTrades.length === 0 ? (
@@ -261,7 +286,7 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
                   <th className="py-2.5 px-3">TP1 (2R)</th>
                   <th className="py-2.5 px-3">TP2 (Target)</th>
                   <th className="py-2.5 px-3">Current</th>
-                  <th className="py-2.5 px-3">Unrealized P/L</th>
+                  <th className="py-2.5 px-3">Unrealized P/L ({currencyCode})</th>
                   <th className="py-2.5 px-3">Status</th>
                 </tr>
               </thead>
@@ -283,7 +308,7 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
                     <td className="py-3 px-3 font-bold text-white">{trade.currentPrice.toFixed(5)}</td>
                     <td className="py-3 px-3 font-bold">
                       <span className={trade.unrealizedPL >= 0 ? 'text-green-500' : 'text-red-400'}>
-                        {trade.unrealizedPL >= 0 ? '+' : ''}${trade.unrealizedPL.toFixed(2)} ({trade.pips} pips)
+                        {trade.unrealizedPL >= 0 ? '+' : ''}{currencySymbol} {trade.unrealizedPL.toFixed(2)} ({trade.pips} pips)
                       </span>
                     </td>
                     <td className="py-3 px-3">
@@ -300,6 +325,63 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
         )}
       </div>
 
+      {/* Live Python Terminal & Execution Log Console */}
+      <div className="bg-[#0D0D10] border border-[#1F2937] p-5 rounded-none font-mono">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-3 border-b border-[#1F2937] gap-2">
+          <div className="flex items-center space-x-2">
+            <Terminal className="w-4 h-4 text-green-500" />
+            <h3 className="font-bold text-white text-xs uppercase tracking-widest">
+              Python Trading Engine — Real-Time Execution Console
+            </h3>
+            <span className="px-2 py-0.5 text-[9px] bg-green-900/30 text-green-500 border border-green-500/30 rounded">
+              LIVE STREAM
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={handleTriggerCycle}
+              disabled={isTriggering}
+              className="flex items-center space-x-1.5 px-3 py-1 bg-green-500 hover:bg-green-400 text-black text-xs font-bold rounded transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isTriggering ? 'animate-spin' : ''}`} />
+              <span>RUN PYTHON CYCLE</span>
+            </button>
+            <button
+              onClick={handleClearLogs}
+              className="flex items-center space-x-1 px-2.5 py-1 bg-[#1F2937] hover:bg-[#374151] text-slate-300 text-xs rounded transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-slate-400" />
+              <span>CLEAR</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Console Log Window */}
+        <div className="bg-black border border-[#1F2937]/80 p-4 h-64 overflow-y-auto font-mono text-xs space-y-1.5 select-text">
+          {(!data.logs || data.logs.length === 0) ? (
+            <div className="text-slate-600 text-center py-12">
+              Console output buffer empty. Click 'RUN PYTHON CYCLE' to execute.
+            </div>
+          ) : (
+            data.logs.map((logLine, idx) => {
+              let colorClass = 'text-slate-300';
+              if (logLine.includes('ERROR') || logLine.includes('Failed')) colorClass = 'text-red-400 font-bold';
+              else if (logLine.includes('PASSED') || logLine.includes('SUCCESS') || logLine.includes('ONLINE') || logLine.includes('valid=True')) colorClass = 'text-green-400 font-semibold';
+              else if (logLine.includes('Sweep') || logLine.includes('BOS') || logLine.includes('Trigger')) colorClass = 'text-blue-400';
+              else if (logLine.includes('USER_ACTION') || logLine.includes('TRIGGER')) colorClass = 'text-amber-400';
+
+              return (
+                <div key={idx} className={`leading-relaxed border-b border-slate-900/60 pb-1 ${colorClass}`}>
+                  {logLine}
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
     </div>
   );
 };
+

@@ -4,7 +4,7 @@ import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianG
 import { BacktestResults, ModelComparisonResult } from '../types';
 
 export const BacktestStudio: React.FC = () => {
-  const [symbol, setSymbol] = useState<'EURUSD' | 'NAS100'>('EURUSD');
+  const [symbol, setSymbol] = useState<'EURUSD' | 'US100Cash'>('EURUSD');
   const [years, setYears] = useState<number>(2);
   const [loading, setLoading] = useState<boolean>(false);
   const [results, setResults] = useState<BacktestResults | null>(null);
@@ -56,11 +56,11 @@ export const BacktestStudio: React.FC = () => {
           {/* Symbol Select */}
           <select
             value={symbol}
-            onChange={(e) => setSymbol(e.target.value as 'EURUSD' | 'NAS100')}
+            onChange={(e) => setSymbol(e.target.value as 'EURUSD' | 'US100Cash')}
             className="bg-black text-white text-xs font-mono font-semibold px-3 py-2 border border-[#1F2937] outline-none focus:border-green-500"
           >
             <option value="EURUSD">EURUSD (Forex Major)</option>
-            <option value="NAS100">NAS100 (US Tech Index)</option>
+            <option value="US100Cash">US100Cash (US Tech Index)</option>
           </select>
 
           {/* Duration Select */}

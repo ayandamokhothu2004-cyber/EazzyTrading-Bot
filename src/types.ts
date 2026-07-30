@@ -32,6 +32,8 @@ export interface OpenTrade {
 export interface BotDashboardData {
   isRunning: boolean;
   mode: string;
+  accountCurrency?: string;
+  currencySymbol?: string;
   accountBalance: number;
   accountEquity: number;
   todayPL: number;
@@ -43,6 +45,9 @@ export interface BotDashboardData {
   activeSession: string;
   symbolsState: Record<string, SymbolState>;
   openTrades: OpenTrade[];
+  logs?: string[];
+  mt5Connected?: boolean;
+  lastCycleTime?: string;
 }
 
 export interface ModelComparisonResult {

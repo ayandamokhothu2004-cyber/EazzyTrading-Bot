@@ -35,7 +35,7 @@ export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, o
                 </span>
               </div>
               <p className="text-[11px] font-mono text-slate-500 hidden sm:block">
-                RULE_BASED_EXECUTION_ENGINE // EURUSD & NAS100
+                RULE_BASED_EXECUTION_ENGINE // EURUSD & US100Cash (ZAR Base)
               </p>
             </div>
           </div>
