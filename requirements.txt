@@ -1,0 +1,4 @@
+# Institutional Algorithmic Trading Bot - Dependencies
+MetaTrader5>=5.0.44; sys_platform == 'win32'
+pandas>=2.0.0
+numpy>=1.24.0
