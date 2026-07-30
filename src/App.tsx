@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Navbar } from './components/Navbar';
 import { LiveDashboard } from './components/LiveDashboard';
+import { AnalyticsView } from './components/AnalyticsView';
 import { BacktestStudio } from './components/BacktestStudio';
 import { ConfigEditor } from './components/ConfigEditor';
 import { CodeInspector } from './components/CodeInspector';
@@ -58,6 +59,12 @@ export default function App() {
       {/* Main Body Content Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {activeTab === 'dashboard' && <LiveDashboard data={dashboardData} />}
+        {activeTab === 'analytics' && (
+          <AnalyticsView
+            currencySymbol={dashboardData?.currencySymbol}
+            currencyCode={dashboardData?.accountCurrency}
+          />
+        )}
         {activeTab === 'backtest' && <BacktestStudio />}
         {activeTab === 'journal' && <TradeJournalView />}
         {activeTab === 'config' && <ConfigEditor />}
@@ -75,3 +82,4 @@ export default function App() {
     </div>
   );
 }
+

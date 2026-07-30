@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { DollarSign, TrendingUp, ShieldAlert, Zap, ArrowUpRight, ArrowDownRight, Layers, Lock, CheckCircle2, AlertTriangle, Terminal, Play, Trash2, RefreshCw } from 'lucide-react';
+import { DollarSign, TrendingUp, ShieldAlert, Zap, ArrowUpRight, ArrowDownRight, Layers, Lock, CheckCircle2, AlertTriangle, Terminal, Play, Trash2, RefreshCw, Clock, Globe, Sparkles, Activity, Maximize2, ChevronRight } from 'lucide-react';
 import { BotDashboardData } from '../types';
 
 interface LiveDashboardProps {
@@ -8,6 +8,8 @@ interface LiveDashboardProps {
 
 export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
   const [isTriggering, setIsTriggering] = useState(false);
+  const [activeChartSymbol, setActiveChartSymbol] = useState<'EURUSD' | 'US100Cash'>('EURUSD');
+  const [chartTimeframe, setChartTimeframe] = useState<'M5' | 'M15' | 'H1' | 'H4'>('M15');
 
   if (!data) {
     return (
@@ -19,6 +21,10 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
 
   const currencySymbol = data.currencySymbol || 'R';
   const currencyCode = data.accountCurrency || 'ZAR';
+
+  const marginUsed = 2450.00;
+  const freeMargin = (data.accountBalance || 101440.00) - marginUsed;
+  const marginLevelPct = ((data.accountEquity / marginUsed) * 100).toFixed(0);
 
   const eurusd = data.symbolsState.EURUSD || {
     price: 1.08642,
@@ -64,8 +70,8 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
   return (
     <div className="space-y-6 font-sans">
       
-      {/* Top Banner: Account Overview Cards (ZAR Base) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Top Banner: Account Overview Cards & Margin Metrics (ZAR Base) */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         
         {/* Account Balance & Equity */}
         <div className="bg-[#111113] border border-[#1F2937] p-4 flex flex-col justify-between h-28 rounded-none">
@@ -84,6 +90,25 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
             <span className="font-semibold text-green-500">
               {currencySymbol} {data.accountEquity.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
+          </div>
+        </div>
+
+        {/* Margin & Free Margin */}
+        <div className="bg-[#111113] border border-[#1F2937] p-4 flex flex-col justify-between h-28 rounded-none">
+          <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest font-semibold font-mono">
+            <span>MARGIN / FREE MARGIN</span>
+            <Layers className="w-4 h-4 text-blue-400" />
+          </div>
+          <div className="text-xl font-mono font-bold text-slate-200 tracking-tight">
+            {currencySymbol} {freeMargin.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          </div>
+          <div className="text-[10px] font-mono text-slate-500 flex justify-between mt-2">
+            <span>Used Margin:</span>
+            <span className="text-slate-300 font-semibold">{currencySymbol} {marginUsed.toFixed(2)}</span>
+          </div>
+          <div className="text-[10px] font-mono text-slate-500 flex justify-between">
+            <span>Margin Level:</span>
+            <span className="text-green-400 font-bold">{marginLevelPct}%</span>
           </div>
         </div>
 
@@ -107,44 +132,225 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
           </div>
         </div>
 
-        {/* Daily Risk Protection Meter */}
+        {/* AI Confidence Meter */}
         <div className="bg-[#111113] border border-[#1F2937] p-4 flex flex-col justify-between h-28 rounded-none">
           <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest font-semibold font-mono">
-            <span>DAILY RISK DRAWDOWN</span>
-            <ShieldAlert className="w-4 h-4 text-orange-500" />
+            <span>AI CONFIDENCE METER</span>
+            <Sparkles className="w-4 h-4 text-amber-400 animate-pulse" />
           </div>
-          <div className="flex items-baseline justify-between mb-1">
-            <span className="text-[10px] font-mono text-slate-400">Risk Used:</span>
-            <span className="text-xs font-mono font-bold text-orange-400">{data.dailyRiskUsedPct}% / 2.0%</span>
+          <div className="flex items-baseline space-x-2">
+            <div className="text-2xl font-mono font-bold text-amber-400 tracking-tight">
+              88%
+            </div>
+            <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-900/30 text-amber-400 border border-amber-500/30 font-bold">
+              HIGH ALIGNMENT
+            </span>
           </div>
           <div className="w-full bg-[#1F2937] h-1.5 rounded-full overflow-hidden my-1">
-            <div
-              className="bg-orange-500 h-full transition-all duration-500"
-              style={{ width: `${(data.dailyRiskUsedPct / 2.0) * 100}%` }}
-            />
+            <div className="bg-amber-400 h-full w-[88%]" />
           </div>
           <div className="text-[10px] font-mono text-slate-500 flex justify-between">
-            <span>Consecutive Losses:</span>
-            <span className="text-white font-semibold">{data.consecutiveLosses} / 2 MAX</span>
+            <span>Bias:</span>
+            <span className="text-green-400 font-bold">BULLISH SWEEP + OB</span>
           </div>
         </div>
 
-        {/* Session & Engine Status */}
+        {/* Session Clock & Engine Status */}
         <div className="bg-[#111113] border border-[#1F2937] p-4 flex flex-col justify-between h-28 rounded-none">
           <div className="flex items-center justify-between text-[10px] text-slate-500 uppercase tracking-widest font-semibold font-mono">
-            <span>MT5 BRIDGE STATUS</span>
-            <Zap className="w-4 h-4 text-blue-400" />
+            <span>SESSION CLOCK</span>
+            <Clock className="w-4 h-4 text-blue-400" />
           </div>
           <div className="flex items-center space-x-2 my-1">
             <span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
-            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">PYTHON ENGINE ONLINE</span>
+            <span className="text-xs font-mono font-bold text-white uppercase tracking-wider">LONDON / NY OVERLAP</span>
           </div>
           <div className="text-[10px] font-mono text-slate-500 flex justify-between">
-            <span>Base Currency:</span>
-            <span className="text-green-400 font-semibold">{currencyCode} ({currencySymbol})</span>
+            <span>Kill Zone Active:</span>
+            <span className="text-green-400 font-semibold">13:00 - 16:00 UTC</span>
           </div>
         </div>
 
+      </div>
+
+      {/* Economic News Calendar & Risk Warning Banner */}
+      <div className="bg-[#111113] border border-[#1F2937] p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 font-mono text-xs">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-amber-950/40 border border-amber-500/40 text-amber-400">
+            <Globe className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <span className="font-bold text-white">HIGH IMPACT NEWS FILTER ACTIVE</span>
+              <span className="px-1.5 py-0.5 text-[9px] bg-red-900/40 text-red-400 border border-red-500/40 rounded font-bold">
+                HIGH VOLATILITY GUARD
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              Next USD High Impact Event: <strong className="text-amber-400">US Core CPI m/m</strong> in 2h 45m (Auto-pauses trades 15m before & after).
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2 text-[10px] text-slate-500">
+          <span>Spread Filter:</span>
+          <span className="text-green-400 font-bold px-2 py-1 bg-black border border-[#1F2937]">EURUSD &lt; 2.5 pips</span>
+          <span className="text-green-400 font-bold px-2 py-1 bg-black border border-[#1F2937]">US100 &lt; 300 pts</span>
+        </div>
+      </div>
+
+      {/* TradingView / SMC Interactive Chart Visualizer */}
+      <div className="bg-[#111113] border border-[#1F2937] p-5 font-mono">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 mb-4 border-b border-[#1F2937] gap-3">
+          <div className="flex items-center space-x-3">
+            <Activity className="w-4 h-4 text-green-500" />
+            <h3 className="font-bold text-white text-xs uppercase tracking-widest">
+              SMC / ICT Institutional Chart Visualizer
+            </h3>
+            <span className="text-[10px] px-2 py-0.5 bg-blue-900/30 text-blue-400 border border-blue-500/30 rounded font-bold">
+              {activeChartSymbol} ({chartTimeframe})
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {/* Symbol Switcher */}
+            <div className="flex items-center space-x-1 bg-black p-1 border border-[#1F2937] text-xs">
+              <button
+                onClick={() => setActiveChartSymbol('EURUSD')}
+                className={`px-3 py-1 font-bold transition-colors ${
+                  activeChartSymbol === 'EURUSD' ? 'bg-green-500 text-black' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                EURUSD
+              </button>
+              <button
+                onClick={() => setActiveChartSymbol('US100Cash')}
+                className={`px-3 py-1 font-bold transition-colors ${
+                  activeChartSymbol === 'US100Cash' ? 'bg-blue-500 text-black' : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                US100Cash
+              </button>
+            </div>
+
+            {/* Timeframe Switcher */}
+            <div className="flex items-center space-x-1 bg-black p-1 border border-[#1F2937] text-xs">
+              {(['M5', 'M15', 'H1', 'H4'] as const).map((tf) => (
+                <button
+                  key={tf}
+                  onClick={() => setChartTimeframe(tf)}
+                  className={`px-2 py-1 font-semibold ${
+                    chartTimeframe === tf ? 'text-green-400 font-bold' : 'text-slate-500 hover:text-white'
+                  }`}
+                >
+                  {tf}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Simulated Institutional SMC Candlestick Canvas */}
+        <div className="bg-black border border-[#1F2937] p-4 relative h-72 flex flex-col justify-between select-none">
+          
+          {/* Top Overlay Legend */}
+          <div className="flex items-center justify-between text-[11px] border-b border-[#1F2937]/60 pb-2 z-10">
+            <div className="flex items-center space-x-4">
+              <span className="text-white font-bold">{activeChartSymbol}</span>
+              <span className="text-green-500">
+                O: {activeChartSymbol === 'EURUSD' ? '1.08450' : '18510.0'}
+              </span>
+              <span className="text-green-400">
+                H: {activeChartSymbol === 'EURUSD' ? '1.08680' : '18590.0'}
+              </span>
+              <span className="text-red-400">
+                L: {activeChartSymbol === 'EURUSD' ? '1.08410' : '18480.0'}
+              </span>
+              <span className="text-white">
+                C: {activeChartSymbol === 'EURUSD' ? '1.08642' : '18542.5'}
+              </span>
+            </div>
+            
+            <div className="flex items-center space-x-3 text-[10px]">
+              <span className="flex items-center text-amber-400">
+                <span className="w-2.5 h-2.5 bg-amber-500/30 border border-amber-500 mr-1" /> Bullish Order Block (OB)
+              </span>
+              <span className="flex items-center text-blue-400">
+                <span className="w-2.5 h-2.5 bg-blue-500/30 border border-blue-500 mr-1" /> FVG Pullback Zone
+              </span>
+              <span className="flex items-center text-green-400">
+                <span className="w-2 h-2 rounded-full bg-green-500 mr-1" /> BOS / CHoCH Marker
+              </span>
+            </div>
+          </div>
+
+          {/* Interactive SMC Candle Bars visual */}
+          <div className="relative flex-1 my-2 flex items-end justify-between px-6">
+            
+            {/* Background Grid Lines */}
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+              <div className="border-b border-dashed border-slate-700 w-full" />
+              <div className="border-b border-dashed border-slate-700 w-full" />
+              <div className="border-b border-dashed border-slate-700 w-full" />
+              <div className="border-b border-dashed border-slate-700 w-full" />
+            </div>
+
+            {/* Liquidity Sweep Box Overlay */}
+            <div className="absolute left-8 bottom-6 w-32 h-10 bg-blue-950/40 border border-blue-500/50 flex items-center justify-center text-[9px] text-blue-400 font-bold z-10">
+              EQL / PDL SWEEP ZONE
+            </div>
+
+            {/* Bullish Order Block Overlay */}
+            <div className="absolute left-44 bottom-12 w-40 h-14 bg-amber-950/40 border border-amber-500/60 flex items-center justify-center text-[9px] text-amber-400 font-bold z-10">
+              INSTITUTIONAL BULLISH OB (0.50 RETRACE)
+            </div>
+
+            {/* FVG Gap Overlay */}
+            <div className="absolute right-24 top-16 w-28 h-12 bg-green-950/40 border border-green-500/50 flex items-center justify-center text-[9px] text-green-400 font-bold z-10">
+              FAIR VALUE GAP (FVG)
+            </div>
+
+            {/* Render Simulated Candlestick Wicks & Bodies */}
+            {[
+              { type: 'bear', open: 60, close: 35, high: 75, low: 20 },
+              { type: 'bear', open: 35, close: 15, high: 40, low: 10 },
+              { type: 'bull', open: 15, close: 50, high: 65, low: 12 },
+              { type: 'bull', open: 50, close: 75, high: 82, low: 45 },
+              { type: 'bear', open: 75, close: 60, high: 78, low: 55 },
+              { type: 'bull', open: 60, close: 85, high: 90, low: 58 },
+              { type: 'bull', open: 85, close: 95, high: 98, low: 80 }
+            ].map((candle, idx) => (
+              <div key={idx} className="relative flex flex-col items-center justify-center w-6 h-full z-0">
+                {/* Wick */}
+                <div
+                  className="w-0.5 bg-slate-600 absolute"
+                  style={{ top: `${100 - candle.high}%`, bottom: `${candle.low}%` }}
+                />
+                {/* Candle Body */}
+                <div
+                  className={`w-3.5 absolute rounded-xs ${
+                    candle.type === 'bull'
+                      ? 'bg-green-500 border border-green-400'
+                      : 'bg-red-500 border border-red-400'
+                  }`}
+                  style={{
+                    top: `${100 - Math.max(candle.open, candle.close)}%`,
+                    height: `${Math.abs(candle.open - candle.close)}%`
+                  }}
+                />
+              </div>
+            ))}
+
+          </div>
+
+          {/* Bottom Time Axis */}
+          <div className="flex justify-between text-[9px] text-slate-500 border-t border-[#1F2937]/60 pt-1">
+            <span>08:00 UTC (Asian)</span>
+            <span>11:00 UTC (London Open)</span>
+            <span>13:30 UTC (NY Open)</span>
+            <span>16:00 UTC (NY Close)</span>
+          </div>
+        </div>
       </div>
 
       {/* Symbol Live Monitors: EURUSD & US100Cash */}
@@ -265,7 +471,7 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
             <Layers className="w-4 h-4 text-green-500" />
             <h3 className="font-bold text-white text-xs uppercase font-mono tracking-widest">Active MT5 Positions ({data.openTrades.length})</h3>
           </div>
-          <span className="text-[10px] font-mono text-slate-500 uppercase">Automatic SL/TP1/TP2 & Breakeven Active (ZAR)</span>
+          <span className="text-[10px] font-mono text-slate-500 uppercase">Automatic SL/TP1/TP2 & Breakeven Active ({currencyCode})</span>
         </div>
 
         {data.openTrades.length === 0 ? (
@@ -384,4 +590,5 @@ export const LiveDashboard: React.FC<LiveDashboardProps> = ({ data }) => {
     </div>
   );
 };
+
 

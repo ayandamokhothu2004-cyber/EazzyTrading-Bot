@@ -1,5 +1,5 @@
 import React from 'react';
-import { Bot, Play, Square, ShieldCheck, Activity, Terminal, Layers, BookOpen, Settings, Server } from 'lucide-react';
+import { Bot, Play, Square, ShieldCheck, Activity, Terminal, Layers, BookOpen, Settings, Server, BarChart2 } from 'lucide-react';
 import { BotDashboardData } from '../types';
 
 interface NavbarProps {
@@ -13,9 +13,9 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, onToggleBot, onOpenBrokerModal }) => {
   const isRunning = data?.isRunning ?? false;
   const activeBroker = data?.activeBroker;
-  const brokerName = activeBroker?.name || 'Exness';
-  const brokerServer = activeBroker?.server || 'Exness-Real10';
-  const isDemo = activeBroker?.isDemo;
+  const brokerName = activeBroker?.name || 'JustMarkets';
+  const brokerServer = activeBroker?.server || 'JustMarkets-Demo3';
+  const isDemo = activeBroker?.isDemo ?? true;
 
   return (
     <header className="bg-[#0A0A0B] border-b border-[#1F2937] text-slate-300 sticky top-0 z-50">
@@ -49,10 +49,11 @@ export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, o
           <nav className="hidden md:flex items-center space-x-1 bg-[#111113] p-1 rounded-lg border border-[#1F2937]">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: Activity },
+              { id: 'analytics', label: 'Analytics', icon: BarChart2 },
               { id: 'backtest', label: 'Backtester & Models', icon: Layers },
               { id: 'journal', label: 'Trade Journal', icon: BookOpen },
               { id: 'config', label: 'Rules & Risk Config', icon: Settings },
-              { id: 'inspector', label: 'Python Code', icon: Terminal },
+              { id: 'inspector', label: 'Python & Deploy', icon: Terminal },
             ].map((tab) => {
               const Icon = tab.icon;
               const isActive = activeTab === tab.id;
@@ -79,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, o
             <button
               onClick={onOpenBrokerModal}
               className="flex items-center space-x-2 px-3 py-1.5 bg-[#111113] hover:bg-[#1A1A1E] border border-green-500/40 text-slate-200 text-xs font-mono rounded transition-colors group"
-              title="Click to change MT5 Broker Login (XM, JustMarkets, Exness, Deriv, IC Markets)"
+              title="Click to change MT5 Broker Login (JustMarkets, XM, Exness, HFM, FBS, OctaFX, Deriv, IC Markets)"
             >
               <Server className="w-3.5 h-3.5 text-green-400 group-hover:animate-pulse" />
               <div className="flex flex-col items-start leading-tight">
@@ -120,6 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, o
         <div className="md:hidden flex overflow-x-auto space-x-1 py-2 border-t border-[#1F2937]">
           {[
             { id: 'dashboard', label: 'Dashboard' },
+            { id: 'analytics', label: 'Analytics' },
             { id: 'backtest', label: 'Backtest' },
             { id: 'journal', label: 'Journal' },
             { id: 'config', label: 'Config' },
@@ -141,3 +143,4 @@ export const Navbar: React.FC<NavbarProps> = ({ data, activeTab, setActiveTab, o
     </header>
   );
 };
+
