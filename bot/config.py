@@ -66,8 +66,8 @@ ACTIVE_ENTRY_MODEL = "MODEL_A"
 
 # Maximum allowed spread in pips (EURUSD) and points (US100Cash)
 MAX_SPREAD_PIPS = {
-    "EURUSD": 1.5,
-    "US100Cash": 25.0
+    "EURUSD": 2.5,
+    "US100Cash": 300.0
 }
 
 # ==============================================================================
