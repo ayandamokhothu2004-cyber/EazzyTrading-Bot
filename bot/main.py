@@ -186,10 +186,15 @@ class TradingBotEngine:
         self.is_running = True
         logger.info("Bot execution engine STARTED. Connecting to Market Data...")
 
-        if not self.market_data.initialize():
+        logger.info("Calling MarketData.initialize()...")
+        result = self.market_data.initialize()
+        logger.info(f"MarketData.initialize() returned: {result}")
+
+        if not result:
             logger.error("Failed to initialize Market Data. Exiting.")
             return
 
+        logger.info("Market Data initialized successfully.")
         logger.info("Entering Main Rule Execution Loop. Press Ctrl+C to stop.")
         try:
             while self.is_running:

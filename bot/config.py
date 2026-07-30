@@ -10,7 +10,7 @@ import os
 # ==============================================================================
 # SYMBOLS & TIMEFRAMES
 # ==============================================================================
-SYMBOLS = ["EURUSD", "NAS100"]
+SYMBOLS = ["EURUSD", "US100Cash"]
 
 # Higher timeframes for trend bias determination
 BIAS_TIMEFRAMES = ["H4", "H1"]
@@ -21,6 +21,9 @@ EXECUTION_TIMEFRAMES = ["M15", "M5"]
 # ==============================================================================
 # RISK MANAGEMENT
 # ==============================================================================
+# Account base currency
+ACCOUNT_CURRENCY = "ZAR"
+
 # Percentage of account balance to risk per trade (e.g., 1.0 = 1%)
 RISK_PER_TRADE_PCT = 1.0
 
@@ -61,10 +64,10 @@ FVG_ENABLED = True
 # Entry Models: 'MODEL_A' (Sweep + BOS + Pullback), 'MODEL_B' (Supply/Demand + Rejection), 'MODEL_C' (Sweep + CHoCH + FVG)
 ACTIVE_ENTRY_MODEL = "MODEL_A"
 
-# Maximum allowed spread in pips (EURUSD) and points (NAS100)
+# Maximum allowed spread in pips (EURUSD) and points (US100Cash)
 MAX_SPREAD_PIPS = {
     "EURUSD": 1.5,
-    "NAS100": 25.0
+    "US100Cash": 25.0
 }
 
 # ==============================================================================
